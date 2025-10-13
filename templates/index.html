@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multilingual OCR, Translation & Summarization</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Multilingual OCR, Translation & Summarization</h1>
+        <h2>OCR (Image to Text)</h2>
+        <form action="/ocr" method="post" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <button type="submit">Extract Text</button>
+        </form>
+        {% if ocr_text %}
+            <div class="result"><strong>OCR Result:</strong><br>{{ ocr_text }}</div>
+        {% endif %}
+        <h2>Translation</h2>
+        <form action="/translate" method="post">
+            <textarea name="text" rows="4" cols="50" placeholder="Enter text to translate" required></textarea><br>
+            <label for="dest_lang">Target Language:</label>
+            <select name="dest_lang" required>
+                <option value="hi">Hindi</option>
+                <option value="ta">Tamil</option>
+                <option value="te">Telugu</option>
+                <option value="kn">Kannada</option>
+                <option value="ml">Malayalam</option>
+                <option value="bn">Bengali</option>
+                <option value="gu">Gujarati</option>
+                <option value="mr">Marathi</option>
+                <option value="pa">Punjabi</option>
+                <option value="ur">Urdu</option>
+            </select>
+            <button type="submit">Translate</button>
+        </form>
+        {% if translated_text %}
+            <div class="result"><strong>Translation Result:</strong><br>{{ translated_text }}</div>
+        {% endif %}
+        <h2>Summarization</h2>
+        <form action="/summarize" method="post">
+            <textarea name="text" rows="6" cols="50" placeholder="Enter text to summarize" required></textarea><br>
+            <button type="submit">Summarize</button>
+        </form>
+        {% if summary_text %}
+            <div class="result"><strong>Summary:</strong><br>{{ summary_text }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>
