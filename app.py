@@ -28,6 +28,11 @@ except Exception:
     PyPDF2 = None
 
 try:
+    from pdfminer.high_level import extract_text as pdfminer_extract_text
+except Exception:
+    pdfminer_extract_text = None
+
+try:
     from pdf2image import convert_from_path, convert_from_bytes
 except Exception:
     convert_from_path = None
@@ -109,6 +114,7 @@ def pdf():
     extracted_text = []
 
     # First try to extract text from the PDF (text-based PDFs)
+    # 1) PyPDF2
     if PyPDF2 is not None:
         try:
             with open(filepath, 'rb') as fh:
@@ -121,8 +127,19 @@ def pdf():
                     if ptext:
                         extracted_text.append(ptext)
         except Exception:
-            # fall through to image-based extraction
+            # fall through to next extractor
             extracted_text = []
+
+    # 2) pdfminer as a fallback (often better for certain PDFs)
+    if not any(extracted_text) and pdfminer_extract_text is not None:
+        try:
+            # pdfminer returns a string for all pages
+            pminer_text = pdfminer_extract_text(filepath)
+            if pminer_text:
+                # split into page-like blocks by double newlines to keep behavior
+                extracted_text.extend([p for p in pminer_text.split('\n\n') if p.strip()])
+        except Exception:
+            pass
 
     # If no text obtained, try image-based OCR via pdf2image
     if not any(extracted_text):
