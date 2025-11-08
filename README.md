@@ -55,6 +55,80 @@ This is a Python Flask web application for multilingual OCR, translation, and su
 - `TESSERACT_CMD`: full path to tesseract executable (e.g. `C:\Program Files\Tesseract-OCR\tesseract.exe`).
 - `POPPLER_PATH`: path to poppler `bin` folder if not added to PATH.
 
+## Docker + Hosting (recommended)
+
+This project is easiest to deploy reliably using Docker because the container can include system packages (Tesseract, Poppler) that are required for OCR and PDF processing.
+
+### Dockerfile
+A `Dockerfile` is included in the repository. It installs Tesseract and Poppler utilities and runs the app with `gunicorn`.
+
+### Build and run locally with Docker
+1. Build the image (from repo root):
+
+```powershell
+docker build -t mt_summarizer:latest .
+```
+
+2. Run the container locally (forward port 5000):
+
+```powershell
+docker run --rm -p 5000:5000 mt_summarizer:latest
+```
+
+Open http://127.0.0.1:5000/ to verify.
+
+If Tesseract or Poppler are not included in the image for any reason, you can pass explicit environment variables when running:
+
+```powershell
+docker run --rm -p 5000:5000 -e TESSERACT_CMD="C:\\Program Files\\Tesseract-OCR\\tesseract.exe" mt_summarizer:latest
+```
+
+### Deploy to Fly.io (free tier available)
+Fly.io supports deploying Docker images and gives you a globally served app with automatic TLS. Quick steps:
+
+1. Install flyctl: https://fly.io/docs/hands-on/install-flyctl/
+2. Login and create an app (from your repo folder):
+
+```bash
+fly auth login
+fly launch
+```
+
+During `fly launch` choose a name, region, and it will detect the Dockerfile and create a `fly.toml` file. To deploy:
+
+```bash
+fly deploy
+```
+
+To provide any runtime environment variables (e.g., secrets or custom Tesseract/Poppler paths):
+
+```bash
+fly secrets set TESSERACT_CMD="/usr/bin/tesseract"
+fly secrets set POPPLER_PATH="/usr/bin"
+```
+
+Fly will build your image and run it. Monitor logs with:
+
+```bash
+fly logs
+```
+
+### Deploy to Render (alternate)
+Render also supports Docker and automatic deploys from GitHub. On Render:
+
+1. Create a new Web Service and connect your GitHub repo.
+2. Choose Docker as the environment (it will use your Dockerfile).
+3. Set environment variables (TESSERACT_CMD / POPPLER_PATH) in the Render dashboard if needed.
+
+### Notes on free tiers
+- Free plans impose resource and uptime limits. For OCR and PDF processing, keep the uploads small and consider asynchronous/background processing for large files.
+- The container will have ephemeral filesystem — uploads placed on disk are temporary; for persistent storage use S3, Backblaze or similar.
+
+If you want, I can:
+- Add a production-ready `fly.toml` template and a minimal GitHub Actions workflow that deploys on push to `main`.
+- Add a simple health-check endpoint and small systemd/gunicorn tuning to improve startup and reliability.
+
+
 ## Folder Structure
 - `app.py` - Main Flask application
 - `templates/` - HTML templates
