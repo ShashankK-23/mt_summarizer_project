@@ -63,17 +63,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
-@app.context_processor
-def inject_extractor_status():
-    """Provide extractor availability and env hints to all templates."""
-    status = {
-        'pypdf2_available': PyPDF2 is not None,
-        'pdfminer_available': pdfminer_extract_text is not None,
-        'pdf2image_available': convert_from_bytes is not None,
-        'poppler_path': POPPLER_PATH or os.environ.get('POPPLER_PATH') or None,
-        'tesseract_cmd': os.environ.get('TESSERACT_CMD') or getattr(pytesseract.pytesseract, 'tesseract_cmd', None)
-    }
-    return status
+
 
 
 # Home page
@@ -143,18 +133,7 @@ def pdf():
             # fall through to next extractor
             extracted_text = []
 
-    # 2) pdfminer as a fallback (often better for certain PDFs)
-    if not any(extracted_text) and pdfminer_extract_text is not None:
-        try:
-            # pdfminer returns a string for all pages
-            pminer_text = pdfminer_extract_text(filepath)
-            if pminer_text:
-                # split into page-like blocks by double newlines to keep behavior
-                extracted_text.extend([p for p in pminer_text.split('\n\n') if p.strip()])
-        except Exception:
-            pass
-
-    # If no text obtained, try image-based OCR via pdf2image
+    # If no text obtained from PyPDF2, try image-based OCR via pdf2image
     if not any(extracted_text):
         if convert_from_bytes is None:
             flash('pdf2image or poppler not available; cannot OCR scanned PDF. See README for setup.')
@@ -174,22 +153,7 @@ def pdf():
 
     full_text = '\n\n'.join([t for t in extracted_text if t])
     if not full_text:
-        # Provide a clearer, actionable message for the user about why extraction failed
-        parts = []
-        parts.append('No text could be extracted from the provided PDF.')
-        # Indicate which extractors were available
-        parts.append(f"PyPDF2 available: {'yes' if PyPDF2 is not None else 'no'}")
-        parts.append(f"pdfminer available: {'yes' if pdfminer_extract_text is not None else 'no'}")
-        parts.append(f"pdf2image available: {'yes' if convert_from_bytes is not None else 'no'}")
-        if convert_from_bytes is None:
-            parts.append('pdf2image/poppler is not available on this server; scanned PDFs require Poppler. See README for setup instructions.')
-        else:
-            # pdf2image is available but conversion may have failed earlier
-            parts.append('pdf2image is available — scanned PDF OCR would have been attempted, but produced no text (check image quality).')
-        # Show environment hints (don't expose secrets)
-        parts.append(f"Detected POPPLER_PATH: {POPPLER_PATH or 'not set'}")
-        msg = ' '.join(parts)
-        flash(msg)
+        flash('No text could be extracted from the provided PDF. If this is a scanned PDF, ensure Poppler and Tesseract are installed (see README).')
     return render_template('index.html', pdf_text=full_text, source_preview=filename)
 
 

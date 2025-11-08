@@ -36,9 +36,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:transparent;padding:8px
 .flash-item{background:#2e1a2b;padding:10px;border-radius:6px;color:#ffdede}
 .footer{text-align:center;color:var(--muted);margin:24px 0}
 
-.status-panel{margin:12px 0;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:8px}
-.status-list{display:flex;flex-wrap:wrap;gap:10px}
-.status-item{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:6px;color:var(--muted);font-size:0.9rem}
+/* status panel removed */
 
 @media (max-width:420px){
   .actions{flex-direction:column}

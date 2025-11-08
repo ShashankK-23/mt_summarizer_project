@@ -7,32 +7,21 @@
         <link rel="stylesheet" href="/static/style.css">
     </head>
     <body>
-        <header class="topbar">
-            <div class="brand">MT Summarizer</div>
-            <div class="tag">OCR • Translate • Summarize — Indian languages</div>
-        </header>
+            <header class="topbar">
+                <div class="brand">Efficient and Effective Translation — English to Dravidian Languages</div>
+                <div class="tag">OCR • Translate • Summarize</div>
+            </header>
 
         <main class="wrap">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="flash">
-                        {% for msg in messages %}
-                            <div class="flash-item">{{ msg }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-                    <div class="status-panel">
-                        <strong>Extraction status:</strong>
-                        <div class="status-list">
-                            <span class="status-item">PyPDF2: <strong>{{ 'yes' if pypdf2_available else 'no' }}</strong></span>
-                            <span class="status-item">pdfminer: <strong>{{ 'yes' if pdfminer_available else 'no' }}</strong></span>
-                            <span class="status-item">pdf2image: <strong>{{ 'yes' if pdf2image_available else 'no' }}</strong></span>
-                            <span class="status-item">POPPLER_PATH: <strong>{{ poppler_path or 'not set' }}</strong></span>
-                            <span class="status-item">TESSERACT_CMD: <strong>{{ tesseract_cmd or 'not set' }}</strong></span>
-                        </div>
-                    </div>
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            <div class="flash">
+                                {% for msg in messages %}
+                                    <div class="flash-item">{{ msg }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
 
             <section class="cards">
                 <div class="card">
