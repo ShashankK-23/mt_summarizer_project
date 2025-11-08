@@ -3,8 +3,11 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>MT Summarizer</title>
-        <link rel="stylesheet" href="/static/style.css">
+    <title>MT Summarizer</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
     </head>
     <body>
             <header class="topbar">
@@ -24,6 +27,7 @@
                     {% endwith %}
 
             <section class="cards">
+                <div class="left-column">
                 <div class="card">
                     <h3>Image OCR</h3>
                     <form action="/ocr" method="post" enctype="multipart/form-data">
@@ -33,7 +37,7 @@
                         </div>
                     </form>
                     {% if ocr_text %}
-                        <div class="output">
+                        <div class="output show">
                             <div class="output-header">OCR Result
                                 <button class="btn small" onclick="copyText('ocr_text')">Copy</button>
                                 <form method="post" action="/download_text" style="display:inline">
@@ -56,7 +60,7 @@
                         </div>
                     </form>
                     {% if pdf_text %}
-                        <div class="output">
+                        <div class="output show">
                             <div class="output-header">PDF Text
                                 <button class="btn small" onclick="copyText('pdf_text')">Copy</button>
                                 <form method="post" action="/download_text" style="display:inline">
@@ -69,12 +73,14 @@
                         </div>
                     {% endif %}
                 </div>
+                </div>
 
+                <div class="right-column">
                 <div class="card">
-                    <h3>Translate & Summarize</h3>
+                    <h3>Inputs</h3>
                     <form id="translateForm" action="/translate" method="post">
                         <label for="text">Source text</label>
-                        <textarea name="text" id="main_text" rows="6" placeholder="Enter or paste text, or click from OCR/PDF output"></textarea>
+                        <textarea name="text" id="main_text" rows="8" placeholder="Enter or paste text, or click from OCR/PDF output"></textarea>
                         <label for="dest_lang">Target language</label>
                         <select name="dest_lang">
                             <option value="hi">Hindi</option>
@@ -96,22 +102,9 @@
                         </div>
                     </form>
 
-                    {% if translated_text %}
-                        <div class="output">
-                            <div class="output-header">Translation
-                                <button class="btn small" onclick="copyText('translated')">Copy</button>
-                                <form method="post" action="/download_text" style="display:inline">
-                                    <input type="hidden" name="text" id="translated_input" value="{{ translated_text|e }}">
-                                    <input type="hidden" name="filename" value="translation.txt">
-                                    <button class="btn small" type="submit">Download</button>
-                                </form>
-                            </div>
-                            <pre id="translated">{{ translated_text }}</pre>
-                        </div>
-                    {% endif %}
-
                     <hr>
-                    <form action="/summarize" method="post">
+
+                    <form id="summForm" action="/summarize" method="post">
                         <label for="text">Text to summarize</label>
                         <textarea name="text" id="summ_text" rows="6" placeholder="Paste text to summarize"></textarea>
                         <label for="sentences">Number of sentences</label>
@@ -122,9 +115,31 @@
                             <button class="btn primary" type="submit">Summarize</button>
                         </div>
                     </form>
+                </div>
 
+                <div class="card">
+                    <h3>Translation</h3>
+                    {% if translated_text %}
+                        <div class="output show">
+                            <div class="output-header">Translation
+                                <button class="btn small" onclick="copyText('translated')">Copy</button>
+                                <form method="post" action="/download_text" style="display:inline">
+                                    <input type="hidden" name="text" id="translated_input" value="{{ translated_text|e }}">
+                                    <input type="hidden" name="filename" value="translation.txt">
+                                    <button class="btn small" type="submit">Download</button>
+                                </form>
+                            </div>
+                            <pre id="translated">{{ translated_text }}</pre>
+                        </div>
+                    {% else %}
+                        <div class="output"><pre id="translated"></pre></div>
+                    {% endif %}
+                </div>
+
+                <div class="card">
+                    <h3>Summary</h3>
                     {% if summary_text %}
-                        <div class="output">
+                        <div class="output show">
                             <div class="output-header">Summary
                                 <button class="btn small" onclick="copyText('summary')">Copy</button>
                                 <form method="post" action="/download_text" style="display:inline">
@@ -135,41 +150,17 @@
                             </div>
                             <pre id="summary">{{ summary_text }}</pre>
                         </div>
+                    {% else %}
+                        <div class="output"><pre id="summary"></pre></div>
                     {% endif %}
+                </div>
                 </div>
             </section>
         </main>
 
         <footer class="footer">Built for demo — adjust Tesseract and Poppler paths via environment variables if needed.</footer>
 
-        <script>
-            function copyText(id){
-                const el = document.getElementById(id);
-                if(!el) return;
-                const text = el.innerText || el.textContent || '';
-                navigator.clipboard.writeText(text).then(()=> alert('Copied to clipboard'));
-            }
-            function fillFrom(id){
-                const el = document.getElementById(id);
-                if(!el) { alert('No source text found'); return; }
-                document.getElementById('main_text').value = el.innerText || el.textContent || '';
-            }
-            function fillSummFrom(id){
-                const el = document.getElementById(id);
-                if(!el) { alert('No source text found'); return; }
-                document.getElementById('summ_text').value = el.innerText || el.textContent || '';
-            }
-            // keep hidden inputs in sync when user downloads
-            document.addEventListener('DOMContentLoaded', ()=>{
-                const ocr = document.getElementById('ocr_text');
-                const pdf = document.getElementById('pdf_text');
-                const trans = document.getElementById('translated');
-                const sum = document.getElementById('summary');
-                if(ocr){ const inp = document.getElementById('ocr_text_input'); if(inp) inp.value = ocr.innerText; }
-                if(pdf){ const inp2 = document.getElementById('pdf_text_input'); if(inp2) inp2.value = pdf.innerText; }
-                if(trans){ const tin = document.getElementById('translated_input'); if(tin) tin.value = trans.innerText; }
-                if(sum){ const sin = document.getElementById('summary_input'); if(sin) sin.value = sum.innerText; }
-            });
-        </script>
+        <script src="/static/ui.js" defer></script>
+        <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
     </body>
 </html>

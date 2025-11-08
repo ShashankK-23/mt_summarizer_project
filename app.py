@@ -38,6 +38,11 @@ except Exception:
     convert_from_path = None
     convert_from_bytes = None
 
+try:
+    import fitz  # PyMuPDF
+except Exception:
+    fitz = None
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
@@ -133,23 +138,63 @@ def pdf():
             # fall through to next extractor
             extracted_text = []
 
-    # If no text obtained from PyPDF2, try image-based OCR via pdf2image
     if not any(extracted_text):
-        if convert_from_bytes is None:
-            flash('pdf2image or poppler not available; cannot OCR scanned PDF. See README for setup.')
-        else:
+        # Choose renderer: 'auto' -> try poppler/pdf2image first, then PyMuPDF; or respect PDF_RENDERER env var
+        renderer = os.environ.get('PDF_RENDERER', 'auto').lower()
+        used_renderer = None
+
+        # Try pdf2image + Poppler when requested or in auto mode
+        if renderer in ('auto', 'poppler') and convert_from_bytes is not None:
             try:
                 with open(filepath, 'rb') as fh:
                     pdf_bytes = fh.read()
-                images = convert_from_bytes(pdf_bytes, dpi=200, poppler_path=POPPLER_PATH) if POPPLER_PATH else convert_from_bytes(pdf_bytes, dpi=200)
+                if POPPLER_PATH:
+                    images = convert_from_bytes(pdf_bytes, dpi=200, poppler_path=POPPLER_PATH)
+                else:
+                    images = convert_from_bytes(pdf_bytes, dpi=200)
                 for img in images:
                     try:
                         ptext = pytesseract.image_to_string(img)
                     except Exception:
                         ptext = ''
                     extracted_text.append(ptext)
+                used_renderer = 'poppler/pdf2image'
             except Exception as e:
-                flash('Error converting PDF to images: %s' % str(e))
+                # record error and fall back to next renderer
+                flash('Error converting PDF to images with pdf2image/poppler: %s' % str(e))
+
+        # If no text yet and PyMuPDF is available, use it (no Poppler required)
+        if not any(extracted_text) and (renderer in ('auto', 'pymupdf')):
+            if fitz is None:
+                # fitz not available
+                if not used_renderer:
+                    flash('No PDF renderer available: install Poppler (pdftoppm) or PyMuPDF. See README for options.')
+            else:
+                try:
+                    doc = fitz.open(filepath)
+                    zoom = float(os.environ.get('PDF_RENDER_ZOOM', 2.0))
+                    mat = fitz.Matrix(zoom, zoom)
+                    for pno in range(doc.page_count):
+                        page = doc.load_page(pno)
+                        pix = page.get_pixmap(matrix=mat, alpha=False)
+                        img_data = pix.tobytes('png')
+                        img = Image.open(io.BytesIO(img_data))
+                        try:
+                            ptext = pytesseract.image_to_string(img)
+                        except Exception:
+                            ptext = ''
+                        extracted_text.append(ptext)
+                    used_renderer = 'pymupdf'
+                except Exception as e:
+                    flash('Error rendering PDF with PyMuPDF: %s' % str(e))
+
+        # If still no renderer used, provide guidance
+        if not any(extracted_text) and used_renderer is None:
+            # If renderer explicitly set to 'poppler' but convert_from_bytes missing, give specific hint
+            if renderer == 'poppler' and convert_from_bytes is None:
+                flash('PDF_RENDERER=poppler was requested but pdf2image/Poppler is not available. Install Poppler or switch to PDF_RENDERER=pymupdf.')
+            else:
+                flash('No text could be extracted from the provided PDF. If this is a scanned PDF, install Poppler or PyMuPDF plus Tesseract (see README).')
 
     full_text = '\n\n'.join([t for t in extracted_text if t])
     if not full_text:

@@ -48,6 +48,20 @@ This is a Python Flask web application for multilingual OCR, translation, and su
 - To OCR scanned PDFs the app uses pdf2image which requires Poppler. On Windows install Poppler and provide its bin path via the environment variable `POPPLER_PATH` or add it to your PATH.
 - Poppler downloads: https://poppler.freedesktop.org/ or for Windows builds see https://github.com/oschwartz10612/poppler-windows
 
+### Alternative: PyMuPDF (no Poppler required)
+- If you prefer not to install Poppler, the app can render PDF pages to images using PyMuPDF (the package name is `PyMuPDF`, import name `fitz`). PyMuPDF renders pages directly in Python and works cross-platform via pip.
+- To use PyMuPDF instead of Poppler, install `PyMuPDF` in your virtualenv and set the environment variable `PDF_RENDERER=pymupdf` (or leave `PDF_RENDERER=auto` — the app will try Poppler first then PyMuPDF).
+- You can also tune the rasterization zoom (roughly controls DPI) with `PDF_RENDER_ZOOM` environment variable (default is `2.0`). Example (PowerShell):
+
+```powershell
+Set-Location C:\mt_summarizer_project
+. .venv\Scripts\Activate.ps1
+pip install PyMuPDF
+# optionally set these for the current session:
+# $env:PDF_RENDERER = 'pymupdf'
+# $env:PDF_RENDER_ZOOM = '2.0'
+```
+
 ### Tesseract
 - Install Tesseract OCR and either add it to your PATH or set the `TESSERACT_CMD` environment variable to the full path of `tesseract.exe`.
 
@@ -64,96 +78,8 @@ $env:SECRET_KEY = 'paste-a-long-random-value-here'
 
 Or set it in your host's environment variables or secrets (Fly/Render/GitHub Actions) so the key persists across restarts.
 
-## Docker + Hosting (recommended)
-
-This project is easiest to deploy reliably using Docker because the container can include system packages (Tesseract, Poppler) that are required for OCR and PDF processing.
-
-### Dockerfile
-A `Dockerfile` is included in the repository. It installs Tesseract and Poppler utilities and runs the app with `gunicorn`.
-
-### Build and run locally with Docker
-1. Build the image (from repo root):
-
-```powershell
-docker build -t mt_summarizer:latest .
-```
-
-2. Run the container locally (forward port 5000):
-
-```powershell
-docker run --rm -p 5000:5000 mt_summarizer:latest
-```
-
-Open http://127.0.0.1:5000/ to verify.
-
-If Tesseract or Poppler are not included in the image for any reason, you can pass explicit environment variables when running:
-
-```powershell
-docker run --rm -p 5000:5000 -e TESSERACT_CMD="C:\\Program Files\\Tesseract-OCR\\tesseract.exe" mt_summarizer:latest
-```
-
-### Deploy to Fly.io (free tier available)
-Fly.io supports deploying Docker images and gives you a globally served app with automatic TLS. Quick steps:
-
-1. Install flyctl: https://fly.io/docs/hands-on/install-flyctl/
-2. Login and create an app (from your repo folder):
-
-```bash
-fly auth login
-fly launch
-```
-
-During `fly launch` choose a name, region, and it will detect the Dockerfile and create a `fly.toml` file. To deploy:
-
-```bash
-fly deploy
-```
-
-To provide any runtime environment variables (e.g., secrets or custom Tesseract/Poppler paths):
-
-```bash
-fly secrets set TESSERACT_CMD="/usr/bin/tesseract"
-fly secrets set POPPLER_PATH="/usr/bin"
-```
-
-Fly will build your image and run it. Monitor logs with:
-
-```bash
-fly logs
-```
-
-### Deploy to Render (alternate)
-Render also supports Docker and automatic deploys from GitHub. On Render:
-
-1. Create a new Web Service and connect your GitHub repo.
-2. Choose Docker as the environment (it will use your Dockerfile).
-3. Set environment variables (TESSERACT_CMD / POPPLER_PATH) in the Render dashboard if needed.
-
-### Notes on free tiers
-- Free plans impose resource and uptime limits. For OCR and PDF processing, keep the uploads small and consider asynchronous/background processing for large files.
-- The container will have ephemeral filesystem — uploads placed on disk are temporary; for persistent storage use S3, Backblaze or similar.
-
-If you want, I can:
-- Add a production-ready `fly.toml` template and a minimal GitHub Actions workflow that deploys on push to `main`.
-- Add a simple health-check endpoint and small systemd/gunicorn tuning to improve startup and reliability.
-
-### CI/CD: GitHub Actions (build image and optional Fly deploy)
-
-There's a workflow included at `.github/workflows/ci-deploy.yml` that does two things on push to `main`:
-
-- Builds a Docker image and pushes it to GitHub Container Registry (GHCR) as `ghcr.io/<your-username>/mt_summarizer:latest` and with the commit SHA tag.
-- Optionally deploys that image to Fly.io if you add the following repository secrets:
-   - `FLY_API_TOKEN` — your Fly API token (create via `fly auth token` or in the Fly dashboard)
-   - `FLY_APP_NAME` — the Fly app name to deploy to (create the app via `fly launch` or the Fly dashboard)
-
-To enable the automatic Fly deploy:
-
-1. Create a Fly app (locally or in the Fly dashboard) and note its name.
-2. Add `FLY_APP_NAME` and `FLY_API_TOKEN` to your GitHub repository secrets (Settings → Secrets → Actions).
-
-When those secrets are present the workflow will authenticate to Fly and run `flyctl deploy --image <GHCR image> --app <FLY_APP_NAME>`.
-
-If you prefer, I can also add an alternative workflow that deploys to Render or pushes images to Docker Hub instead.
+## Notes on deployment
+This project is intended for local development and experimentation. If you later decide to deploy the app, you can add containerization or cloud configuration back then — for now the README focuses only on local setup and usage.
 
 
 ## Folder Structure

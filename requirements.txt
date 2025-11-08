@@ -6,4 +6,4 @@ sumy
 PyPDF2
 pdf2image
 gunicorn
-pdfminer.six
+PyMuPDF
