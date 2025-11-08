@@ -63,6 +63,19 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
+@app.context_processor
+def inject_extractor_status():
+    """Provide extractor availability and env hints to all templates."""
+    status = {
+        'pypdf2_available': PyPDF2 is not None,
+        'pdfminer_available': pdfminer_extract_text is not None,
+        'pdf2image_available': convert_from_bytes is not None,
+        'poppler_path': POPPLER_PATH or os.environ.get('POPPLER_PATH') or None,
+        'tesseract_cmd': os.environ.get('TESSERACT_CMD') or getattr(pytesseract.pytesseract, 'tesseract_cmd', None)
+    }
+    return status
+
+
 # Home page
 @app.route('/', methods=['GET'])
 def index():

@@ -23,6 +23,17 @@
                 {% endif %}
             {% endwith %}
 
+                    <div class="status-panel">
+                        <strong>Extraction status:</strong>
+                        <div class="status-list">
+                            <span class="status-item">PyPDF2: <strong>{{ 'yes' if pypdf2_available else 'no' }}</strong></span>
+                            <span class="status-item">pdfminer: <strong>{{ 'yes' if pdfminer_available else 'no' }}</strong></span>
+                            <span class="status-item">pdf2image: <strong>{{ 'yes' if pdf2image_available else 'no' }}</strong></span>
+                            <span class="status-item">POPPLER_PATH: <strong>{{ poppler_path or 'not set' }}</strong></span>
+                            <span class="status-item">TESSERACT_CMD: <strong>{{ tesseract_cmd or 'not set' }}</strong></span>
+                        </div>
+                    </div>
+
             <section class="cards">
                 <div class="card">
                     <h3>Image OCR</h3>
