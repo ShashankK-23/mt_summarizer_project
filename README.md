@@ -44,6 +44,17 @@ This is a Python Flask web application for multilingual OCR, translation, and su
 - Translation uses Google Translate API (free tier, may have limits).
 - Summarization uses the LSA algorithm (English only by default).
 
+### PDF / Poppler
+- To OCR scanned PDFs the app uses pdf2image which requires Poppler. On Windows install Poppler and provide its bin path via the environment variable `POPPLER_PATH` or add it to your PATH.
+- Poppler downloads: https://poppler.freedesktop.org/ or for Windows builds see https://github.com/oschwartz10612/poppler-windows
+
+### Tesseract
+- Install Tesseract OCR and either add it to your PATH or set the `TESSERACT_CMD` environment variable to the full path of `tesseract.exe`.
+
+### Environment variables (optional)
+- `TESSERACT_CMD`: full path to tesseract executable (e.g. `C:\Program Files\Tesseract-OCR\tesseract.exe`).
+- `POPPLER_PATH`: path to poppler `bin` folder if not added to PATH.
+
 ## Folder Structure
 - `app.py` - Main Flask application
 - `templates/` - HTML templates
