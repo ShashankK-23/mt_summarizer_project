@@ -161,7 +161,22 @@ def pdf():
 
     full_text = '\n\n'.join([t for t in extracted_text if t])
     if not full_text:
-        flash('No text could be extracted from the provided PDF.')
+        # Provide a clearer, actionable message for the user about why extraction failed
+        parts = []
+        parts.append('No text could be extracted from the provided PDF.')
+        # Indicate which extractors were available
+        parts.append(f"PyPDF2 available: {'yes' if PyPDF2 is not None else 'no'}")
+        parts.append(f"pdfminer available: {'yes' if pdfminer_extract_text is not None else 'no'}")
+        parts.append(f"pdf2image available: {'yes' if convert_from_bytes is not None else 'no'}")
+        if convert_from_bytes is None:
+            parts.append('pdf2image/poppler is not available on this server; scanned PDFs require Poppler. See README for setup instructions.')
+        else:
+            # pdf2image is available but conversion may have failed earlier
+            parts.append('pdf2image is available — scanned PDF OCR would have been attempted, but produced no text (check image quality).')
+        # Show environment hints (don't expose secrets)
+        parts.append(f"Detected POPPLER_PATH: {POPPLER_PATH or 'not set'}")
+        msg = ' '.join(parts)
+        flash(msg)
     return render_template('index.html', pdf_text=full_text, source_preview=filename)
 
 
