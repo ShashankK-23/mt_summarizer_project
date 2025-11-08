@@ -55,6 +55,15 @@ This is a Python Flask web application for multilingual OCR, translation, and su
 - `TESSERACT_CMD`: full path to tesseract executable (e.g. `C:\Program Files\Tesseract-OCR\tesseract.exe`).
 - `POPPLER_PATH`: path to poppler `bin` folder if not added to PATH.
 
+### SECRET_KEY (Flask sessions)
+- The app uses Flask sessions for flash messages. In development the app will generate a random `SECRET_KEY` if none is provided (this is fine for testing but not for production). To set a persistent key in production, export an environment variable named `SECRET_KEY` with a long random value (32+ bytes). Example (PowerShell):
+
+```powershell
+$env:SECRET_KEY = 'paste-a-long-random-value-here'
+```
+
+Or set it in your host's environment variables or secrets (Fly/Render/GitHub Actions) so the key persists across restarts.
+
 ## Docker + Hosting (recommended)
 
 This project is easiest to deploy reliably using Docker because the container can include system packages (Tesseract, Poppler) that are required for OCR and PDF processing.

@@ -20,6 +20,7 @@ import os
 from werkzeug.utils import secure_filename
 import io
 import tempfile
+import secrets
 
 try:
     import PyPDF2
@@ -37,6 +38,12 @@ app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Ensure Flask has a SECRET_KEY for session/flash. In production set the SECRET_KEY env var.
+# Fallback: generate a random key for development (note: this will change on each restart).
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Optional: let user set TESSERACT_CMD and POPPLER_PATH via environment variables
 if os.environ.get('TESSERACT_CMD'):
