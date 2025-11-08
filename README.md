@@ -128,6 +128,24 @@ If you want, I can:
 - Add a production-ready `fly.toml` template and a minimal GitHub Actions workflow that deploys on push to `main`.
 - Add a simple health-check endpoint and small systemd/gunicorn tuning to improve startup and reliability.
 
+### CI/CD: GitHub Actions (build image and optional Fly deploy)
+
+There's a workflow included at `.github/workflows/ci-deploy.yml` that does two things on push to `main`:
+
+- Builds a Docker image and pushes it to GitHub Container Registry (GHCR) as `ghcr.io/<your-username>/mt_summarizer:latest` and with the commit SHA tag.
+- Optionally deploys that image to Fly.io if you add the following repository secrets:
+   - `FLY_API_TOKEN` — your Fly API token (create via `fly auth token` or in the Fly dashboard)
+   - `FLY_APP_NAME` — the Fly app name to deploy to (create the app via `fly launch` or the Fly dashboard)
+
+To enable the automatic Fly deploy:
+
+1. Create a Fly app (locally or in the Fly dashboard) and note its name.
+2. Add `FLY_APP_NAME` and `FLY_API_TOKEN` to your GitHub repository secrets (Settings → Secrets → Actions).
+
+When those secrets are present the workflow will authenticate to Fly and run `flyctl deploy --image <GHCR image> --app <FLY_APP_NAME>`.
+
+If you prefer, I can also add an alternative workflow that deploys to Render or pushes images to Docker Hub instead.
+
 
 ## Folder Structure
 - `app.py` - Main Flask application
